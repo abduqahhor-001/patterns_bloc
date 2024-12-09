@@ -21,7 +21,9 @@ Widget itemOfPost(BuildContext context,Contact contact) {
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
-            onPressed: (ctx){},
+            onPressed: (ctx){
+              BlocProvider.of<ListContactCubit>(context).callUpdatePage(context,contact);
+            },
             borderRadius: BorderRadius.circular(25),
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,

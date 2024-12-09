@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
           onPressed: () {
-
+            BlocProvider.of<ListContactCubit>(context).callCreatePage(context);
           },
           child: Icon(Icons.add),
         ));
