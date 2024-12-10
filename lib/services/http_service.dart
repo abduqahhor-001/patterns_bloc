@@ -1,16 +1,19 @@
 import 'dart:convert';
-import 'package:http/http.dart';
-
+import 'package:dio/dio.dart';  // Import Dio
 import '../model/contact_model.dart';
 import 'log_service.dart';
 
-
 class Network {
-  static String BASE = "67541b0536bcd1eec8502b98.mockapi.io";
-  static Map<String,String> headers = {'Content-Type':'application/json'};
+  static String BASE = "https://67541b0536bcd1eec8502b98.mockapi.io"; // Ensure full URL
+  static Map<String, String> headers = {'Content-Type': 'application/json'};
+
+  static Dio dio = Dio(BaseOptions(
+    baseUrl: BASE,
+    headers: headers,
+    responseType: ResponseType.json,
+  ));
 
   /* Http Apis */
-
   static String API_LIST = "/contacts/contacts";
   static String API_CREATE = "/contacts/contacts";
   static String API_UPDATE = "/contacts/contacts/"; //{id}
@@ -18,81 +21,85 @@ class Network {
 
   /* Http Requests */
 
-  static Future<String?> GET(String api, Map<String, String> params) async {
-    var uri = Uri.https(BASE, api, params); // http or https
-    var response = await get(uri, headers: headers);
-    if (response.statusCode == 200) {
-      LogService.d(response.body);
-      return response.body;
+  // GET Request
+  static Future<List<Contact>?> GET(String api, Map<String, String> params) async {
+    try {
+      Response response = await dio.get(api, queryParameters: params);
+      if (response.statusCode == 200) {
+        LogService.d(response.data.toString());
+        return parsePostList(jsonEncode(response.data));
+      }
+    } catch (e) {
+      LogService.d("GET request failed: $e");
     }
     return null;
   }
 
-  static Future<String?> POST(String api, Map<String, String> params) async {
-    print(params.toString());
-    var uri = Uri.https(BASE, api); // http or https
-    var response = await post(uri, headers: headers,body: jsonEncode(params));
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      print('yaratildi');
-      return response.body;
+  // POST Request
+  static Future<Contact?> POST(String api, Map<String, String> params) async {
+    try {
+      Response response = await dio.post(api, data: params);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        LogService.d('Created successfully');
+        return Contact.fromJson(response.data);
+      }
+    } catch (e) {
+      LogService.d("POST request failed: $e");
     }
     return null;
   }
 
-  static Future<String?> PUT(String api, Map<String, String> params) async {
-    var uri = Uri.https(BASE, api); // http or https
-    var response = await put(uri, headers: headers,body: jsonEncode(params));
-    if (response.statusCode == 200) {
-      LogService.d("yangilandi");
-      return response.body;
-
+  // PUT Request
+  static Future<Contact?> PUT(String api, Map<String, String> params) async {
+    try {
+      Response response = await dio.put(api, data: params);
+      if (response.statusCode == 200) {
+        LogService.d("Updated successfully");
+        return Contact.fromJson(response.data);
+      }
+    } catch (e) {
+      LogService.d("PUT request failed: $e");
     }
     return null;
   }
 
-  static Future<String?> DEL(String api, Map<String, String> params) async {
-    var uri = Uri.https(BASE, api, params); // http or https
-    var response = await delete(uri, headers: headers);
-    if (response.statusCode == 200) {
-      print('ajoyib');
-      return response.body;
+  // DELETE Request
+  static Future<void> DEL(String api, Map<String, String> params) async {
+    try {
+      Response response = await dio.delete(api, data: params);
+      if (response.statusCode == 200) {
+        LogService.d("Deleted successfully");
+      }
+    } catch (e) {
+      LogService.d("DELETE request failed: $e");
     }
-    return null;
   }
 
   /* Http Params */
 
   static Map<String, String> paramsEmpty() {
-    Map<String, String> params = new Map();
-    return params;
+    return {};
   }
 
   static Map<String, String> paramsCreate(Contact contact) {
-    Map<String, String> params = new Map();
-    params.addAll({
+    return {
       'full_name': contact.fullName,
       'phone': contact.phone,
-
-    });
-    return params;
+    };
   }
 
   static Map<String, String> paramsUpdate(Contact contact) {
-    Map<String, String> params = new Map();
-    params.addAll({
-      'id': contact.id .toString(),
+    return {
+      'id': contact.id.toString(),
       'full_name': contact.fullName,
       'phone': contact.phone,
-
-    });
-    return params;
+    };
   }
 
-  // parsing
+  // Parsing Response Data
 
-  static List<Contact> parsePostList(String response){
+  static List<Contact> parsePostList(String response) {
     dynamic json = jsonDecode(response);
-    var data = List<Contact>.from(json.map((x)=>Contact.fromJson(x)));
-    return data;
+    return List<Contact>.from(json.map((x) => Contact.fromJson(x)));
   }
 }
